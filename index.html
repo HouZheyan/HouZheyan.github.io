@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>电信客户流失生存分析报告 | 侯哲妍</title>
+    <title>生存分析报告：电信客户流失预测 | 侯哲妍</title>
     <style>
         * {
             margin: 0;
@@ -18,7 +18,7 @@
             padding: 2rem 1rem;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
         }
         .header {
@@ -40,11 +40,11 @@
             background: white;
             border-radius: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            padding: 1.8rem;
+            padding: 2rem;
             margin-bottom: 2rem;
         }
         h2 {
-            font-size: 1.6rem;
+            font-size: 1.7rem;
             border-left: 5px solid #2c7da0;
             padding-left: 1rem;
             margin-bottom: 1.2rem;
@@ -66,8 +66,10 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 1rem 0;
+            margin: 1.2rem 0;
             font-size: 0.85rem;
+            overflow-x: auto;
+            display: block;
         }
         th, td {
             border: 1px solid #e2e8f0;
@@ -85,7 +87,7 @@
             margin: 1.5rem 0;
         }
         .figure img {
-            max-width: 500px;
+            max-width: 550px;
             width: 100%;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -105,7 +107,7 @@
         }
         .figure-grid-item {
             flex: 1;
-            min-width: 200px;
+            min-width: 220px;
             text-align: center;
         }
         .figure-grid-item img {
@@ -114,12 +116,9 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.1);
             border: 1px solid #e2e8f0;
         }
-        .figure-grid-item .figure-caption {
-            font-size: 0.75rem;
-        }
         .insight-box {
             background: #eaf7f0;
-            padding: 1rem;
+            padding: 1rem 1.2rem;
             border-radius: 12px;
             margin: 1rem 0;
             border-left: 5px solid #2a9d8f;
@@ -129,7 +128,7 @@
         }
         .note {
             background-color: #f0f4f8;
-            padding: 0.8rem;
+            padding: 0.8rem 1rem;
             border-radius: 10px;
             margin: 1rem 0;
             font-size: 0.85rem;
@@ -148,7 +147,7 @@
         }
         @media (max-width: 768px) {
             .card {
-                padding: 1rem;
+                padding: 1.2rem;
             }
             h2 {
                 font-size: 1.4rem;
@@ -162,92 +161,314 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1>📊 电信客户流失生存分析报告</h1>
-        <p>Kaplan‑Meier · Cox 比例风险模型 · AFT 模型 · 客户生命周期价值分析</p>
-        <p style="font-size:0.8rem; margin-top:0.5rem;">侯哲妍 (Zheyan Hou) | 2026年4月</p>
+        <h1>📊 生存分析报告：电信客户流失预测</h1>
+        <p>基于 Kaplan‑Meier、Cox 比例风险模型、AFT 模型与客户生命周期价值分析</p>
+        <p style="font-size:0.8rem; margin-top:0.3rem;">侯哲妍 (Zheyan Hou) | 2026年4月</p>
     </div>
 
+    <!-- ================= 一、数据准备 ================= -->
     <div class="card">
         <h2>一、数据准备与探索性分析</h2>
-        <p>本报告使用 IBM Telco Customer Churn 数据集（原始 7,043 条记录）。为了聚焦高流失风险群体，将数据筛选为「月付合同 + 有互联网服务」的客户，最终得到 <strong>3,351 条有效记录</strong>，其中流失客户占比 46.4%。</p>
-        
-        <h3>📋 关键变量统计</h3>
+        <h3>1.1 数据集说明</h3>
+        <p>本分析使用 IBM 提供的 Telco Customer Churn 数据集，该数据集模拟了一家电信公司的客户信息。原始数据包含 <strong>7,043 条客户记录</strong>，每条记录包含 21 个字段，涵盖客户的人口统计学特征（如性别、年龄）、服务使用情况（如电话服务、互联网服务、在线安全等）、合同类型以及客户流失状态。</p>
+
+        <h3>1.2 数据清洗与筛选</h3>
+        <p>为了聚焦于高流失风险客户群体，对原始数据进行了以下筛选和转换：</p>
         <table>
-            <thead><tr><th>统计量</th><th>tenure（在网月数）</th><th>churn（流失=1）</th></tr></thead>
+            <thead><tr><th>步骤</th><th>操作说明</th></tr></thead>
             <tbody>
-                <tr><td>均值</td><td>19.43</td><td>0.464</td></tr>
-                <tr><td>标准差</td><td>18.17</td><td>0.499</td></tr>
-                <tr><td>最小/最大</td><td>1 / 72</td><td>0 / 1</td></tr>
+                <tr><td><strong>标签转换</strong></td><td>将 <code>churnString</code> 列（值为"Yes"/"No"）转换为数值型 <code>churn</code> 列（1=流失，0=未流失）</td></tr>
+                <tr><td><strong>合同类型筛选</strong></td><td>只保留合同类型为 <code>Month-to-month</code>（月付合同）的客户</td></tr>
+                <tr><td><strong>服务类型筛选</strong></td><td>只保留使用互联网服务（<code>internetService != "No"</code>）的客户</td></tr>
             </tbody>
         </table>
-        <div class="insight-box"><strong>✅ 初步发现</strong>：目标客户平均在网约 19 个月，近一半（46.4%）已经流失，说明月付互联网群体流失风险很高，值得深入建模。</div>
+        <div class="insight-box"><strong>✅ 清洗结果</strong>：原始数据 7,043 行 → 清洗后数据 <strong>3,351 行</strong>（筛选条件：月付合同 + 有互联网服务）。</div>
+
+        <h3>1.3 清洗后数据概览</h3>
+        <p>下表展示了清洗后数据的前 5 行示例：</p>
+        <table>
+            <thead><tr><th>customerID</th><th>gender</th><th>tenure</th><th>contract</th><th>internetService</th><th>churn</th></tr></thead>
+            <tbody>
+                <tr><td>7590-VHVEG</td><td>Female</td><td>1.0</td><td>Month-to-month</td><td>DSL</td><td>0</td></tr>
+                <tr><td>3668-QPYBK</td><td>Male</td><td>2.0</td><td>Month-to-month</td><td>DSL</td><td>1</td></tr>
+                <tr><td>9237-HQITU</td><td>Female</td><td>2.0</td><td>Month-to-month</td><td>Fiber optic</td><td>1</td></tr>
+                <tr><td>9305-CDSKC</td><td>Female</td><td>8.0</td><td>Month-to-month</td><td>Fiber optic</td><td>1</td></tr>
+                <tr><td>1452-KIOVK</td><td>Male</td><td>22.0</td><td>Month-to-month</td><td>Fiber optic</td><td>0</td></tr>
+            </tbody>
+        </table>
+
+        <h3>1.4 生存分析关键变量统计</h3>
+        <p>生存分析需要两个核心变量：<strong>生存时间 (tenure)</strong>：客户在网时长（月）；<strong>事件指示符 (churn)</strong>：1 表示已流失，0 表示删失（仍为活跃用户）。下表展示了这两个关键变量的描述性统计：</p>
+        <table>
+            <thead><tr><th>统计量</th><th>tenure（月）</th><th>churn（流失标识）</th></tr></thead>
+            <tbody>
+                <tr><td>计数</td><td>3,351</td><td>3,351</td></tr>
+                <tr><td>均值</td><td>19.43</td><td>0.464</td></tr>
+                <tr><td>标准差</td><td>18.17</td><td>0.499</td></tr>
+                <tr><td>最小值</td><td>1.0</td><td>0</td></tr>
+                <tr><td>最大值</td><td>72.0</td><td>1</td></tr>
+            </tbody>
+        </table>
+
+        <h3>1.5 关键发现</h3>
+        <div class="insight-box">
+            <p>📌 客户在网时长范围为 <strong>1 至 72 个月</strong>，平均在网时长约为 <strong>19.4 个月</strong>。<br>
+            📌 目标群体中，流失客户的占比为 <strong>46.4%</strong>（1,556/3,351），说明月付互联网客户群体流失率较高，具有分析价值。</p>
+        </div>
+        <p><strong>数据存储</strong>：清洗后的数据已保存为 Parquet 格式，存储路径为：/data/proj_1/ibm_telco_data/silver</p>
     </div>
 
+    <!-- ================= 二、Kaplan-Meier ================= -->
     <div class="card">
-        <h2>二、Kaplan‑Meier 生存分析</h2>
-        <p>Kaplan‑Meier 方法估计客户随时间变化的留存概率。下图展示了月付互联网客户的整体生存曲线：</p>
+        <h2>二、Kaplan-Meier 生存分析</h2>
+        <h3>2.1 整体生存函数估计</h3>
         <div class="figure">
             <img src="./images/kmf_overall.png" alt="整体生存曲线">
-            <div class="figure-caption">图1：整体生存曲线（Kaplan-Meier）</div>
+            <div class="figure-caption">图1：整体生存曲线（Kaplan-Meier估计）</div>
         </div>
-        <p><strong>中位生存时间为 34 个月</strong> —— 50% 的客户会在签约后 34 个月内流失。这相当于平均“客户寿命”约为 3 年。</p>
-        
-        <h3>🔍 分组对比：哪些因素真正影响流失？</h3>
-        <p>以「在线安全服务」为例，使用该服务的客户生存概率明显更高（Log-Rank 检验 p &lt; 0.001）。</p>
+        <p><strong>中位生存时间：34.0 个月</strong> —— 50% 的月付互联网客户会在签约后的 34 个月内流失。换句话说，这类客户的"预期寿命"约为 3 年。</p>
+
+        <h3>2.2 分组生存分析</h3>
+        <h4>2.2.1 性别分组</h4>
         <div class="figure">
-            <img src="./images/kmf_onlineSecurity.png" alt="在线安全分组">
-            <div class="figure-caption">图2：在线安全服务对生存曲线的影响</div>
+            <img src="./images/kmf_gender.png" alt="性别分组生存曲线">
+            <div class="figure-caption">图2：性别分组生存曲线</div>
         </div>
-        <div class="insight-box"><strong>🎯 关键结论</strong>：增值服务（在线安全、备份、技术支持）是延长客户生命周期的<strong>最强影响因素</strong>；而性别、是否老年客户等人口学特征无显著差异。</div>
+        <p><strong>Log-Rank 检验结果</strong>：p = 0.153 > 0.05，<strong>男性和女性的生存曲线无显著差异</strong>，性别不是影响客户流失时间的关键因素。</p>
+
+        <h4>2.2.2 在线安全服务分组</h4>
+        <div class="figure">
+            <img src="./images/kmf_onlineSecurity.png" alt="在线安全分组生存曲线">
+            <div class="figure-caption">图3：在线安全服务分组生存曲线</div>
+        </div>
+        <p><strong>Log-Rank 检验结果</strong>：p &lt; 0.001，<strong>使用在线安全服务的客户与未使用的客户之间存在极显著差异</strong>。从生存曲线可以看出，使用在线安全服务的客户生存概率明显更高。</p>
+
+        <h3>2.3 所有分类变量的 Log-Rank 检验汇总</h3>
+        <p>对 15 个分类变量逐一进行 Log-Rank 检验，结果汇总如下：</p>
+        <table>
+            <thead><tr><th>变量</th><th>p值</th><th>是否显著 (p&lt;0.05)</th><th>解读</th></tr></thead>
+            <tbody>
+                <tr><td>gender</td><td>0.153</td><td>否</td><td>性别无显著影响</td></tr>
+                <tr><td>seniorCitizen</td><td>0.723</td><td>否</td><td>是否老年无显著影响</td></tr>
+                <tr><td>partner</td><td>&lt;0.001</td><td><strong>是</strong></td><td>有伴侣的客户生存概率更高</td></tr>
+                <tr><td>dependents</td><td>&lt;0.001</td><td><strong>是</strong></td><td>有家属的客户生存概率更高</td></tr>
+                <tr><td>phoneService</td><td>0.194</td><td>否</td><td>电话服务无显著影响</td></tr>
+                <tr><td>multipleLines</td><td>&lt;0.001</td><td><strong>是</strong></td><td>多条线路有显著影响</td></tr>
+                <tr><td>internetService</td><td>&lt;0.001</td><td><strong>是</strong></td><td>DSL 与光纤客户有显著差异</td></tr>
+                <tr><td>streamingTV</td><td>&lt;0.001</td><td><strong>是</strong></td><td>流媒体电视有显著影响</td></tr>
+                <tr><td>streamingMovies</td><td>&lt;0.001</td><td><strong>是</strong></td><td>流媒体电影有显著影响</td></tr>
+                <tr><td>onlineSecurity</td><td>&lt;0.001</td><td><strong>是</strong></td><td>在线安全有极显著影响</td></tr>
+                <tr><td>onlineBackup</td><td>&lt;0.001</td><td><strong>是</strong></td><td>在线备份有极显著影响</td></tr>
+                <tr><td>deviceProtection</td><td>&lt;0.001</td><td><strong>是</strong></td><td>设备保护有显著影响</td></tr>
+                <tr><td>techSupport</td><td>&lt;0.001</td><td><strong>是</strong></td><td>技术支持有显著影响</td></tr>
+                <tr><td>paperlessBilling</td><td>0.004</td><td><strong>是</strong></td><td>无纸化账单有显著影响</td></tr>
+                <tr><td>paymentMethod</td><td>&lt;0.001</td><td><strong>是</strong></td><td>支付方式有显著影响</td></tr>
+            </tbody>
+        </table>
+
+        <h3>2.4 生存概率提取</h3>
+        <p>以 DSL 互联网服务客户为例，提取其前 10 个月的生存概率：</p>
+        <table>
+            <thead><tr><th>时间(月)</th><th>生存概率</th></tr></thead>
+            <tbody>
+                <tr><td>0</td><td>1.000</td></tr><tr><td>1</td><td>0.903</td></tr><tr><td>2</td><td>0.864</td></tr><tr><td>3</td><td>0.835</td></tr><tr><td>4</td><td>0.811</td></tr>
+                <tr><td>5</td><td>0.794</td></tr><tr><td>6</td><td>0.784</td></tr><tr><td>7</td><td>0.776</td></tr><tr><td>8</td><td>0.768</td></tr><tr><td>9</td><td>0.751</td></tr>
+            </tbody>
+        </table>
+        <p><strong>解读</strong>：DSL 客户在第 1 个月末的生存概率约为 90.3%，即约 9.7% 的 DSL 客户会在第一个月内流失；到第 9 个月末，生存概率降至约 75.1%。</p>
+
+        <h3>2.5 Kaplan-Meier 分析小结</h3>
+        <div class="insight-box">
+            <p>🎯 <strong>整体中位生存时间</strong>：34 个月，50% 客户会在此之前流失。<br>
+            🎯 <strong>最强影响因素</strong>：onlineSecurity、onlineBackup、techSupport（p 值极小）。<br>
+            🎯 <strong>无显著影响因素</strong>：gender、seniorCitizen、phoneService。<br>
+            🎯 <strong>业务启示</strong>：增值服务（在线安全、备份、技术支持）显著延长客户生命周期。</p>
+        </div>
     </div>
 
+    <!-- ================= 三、Cox 比例风险模型 ================= -->
     <div class="card">
         <h2>三、Cox 比例风险模型</h2>
-        <p>Cox 模型同时纳入多个变量，评估各因素对流失风险的独立影响。以下森林图展示了风险比（HR）：</p>
+        <h3>3.1 模型概述</h3>
+        <p>Cox 比例风险模型是一种半参数回归模型，用于分析多个变量对生存时间的联合影响。本模型纳入的变量包括：<code>dependents_Yes</code>、<code>internetService_DSL</code>、<code>onlineBackup_Yes</code>、<code>techSupport_Yes</code>。</p>
+
+        <h3>3.2 模型拟合结果</h3>
+        <table>
+            <thead><tr><th>变量</th><th>coef</th><th>HR (exp(coef))</th><th>HR 95% CI</th><th>p值</th><th>显著性</th></tr></thead>
+            <tbody>
+                <tr><td>dependents_Yes</td><td>-0.33</td><td>0.72</td><td>(0.63, 0.83)</td><td>&lt;0.005</td><td>✓</td></tr>
+                <tr><td>internetService_DSL</td><td>-0.22</td><td>0.80</td><td>(0.72, 0.90)</td><td>&lt;0.005</td><td>✓</td></tr>
+                <tr><td>onlineBackup_Yes</td><td>-0.78</td><td>0.46</td><td>(0.41, 0.52)</td><td>&lt;0.005</td><td>✓</td></tr>
+                <tr><td>techSupport_Yes</td><td>-0.64</td><td>0.53</td><td>(0.46, 0.61)</td><td>&lt;0.005</td><td>✓</td></tr>
+            </tbody>
+        </table>
+        <p><strong>模型整体评价指标</strong>：Concordance 指数 = 0.64（中等区分能力），Partial AIC = 22639.90，Log-likelihood ratio test = 337.77 (df=4)，p &lt; 0.001。</p>
         <div class="figure">
-            <img src="./images/cph_hazard_ratios.png" alt="Cox森林图">
-            <div class="figure-caption">图3：Cox 模型风险比（HR＜1 表示保护因素）</div>
+            <img src="./images/cph_hazard_ratios.png" alt="风险比森林图">
+            <div class="figure-caption">图4：Cox模型风险比森林图</div>
         </div>
-        <p><strong>最强保护因素</strong>：在线备份（HR=0.46，风险降低54%）、技术支持（HR=0.53）、有家属（HR=0.72）。DSL 用户流失风险比光纤用户低 20%。</p>
-        <div class="note">📌 模型区分能力：Concordance = 0.64（中等）。但部分变量（如 internetService）违反比例风险假设，后续需用分层 Cox 或 AFT 模型验证。</div>
+
+        <h3>3.3 变量解读</h3>
+        <p>风险比 HR &lt; 1 表示降低流失风险（保护因素）。</p>
+        <div class="insight-box">
+            <p>📌 <strong>dependents_Yes</strong>：HR=0.72 → 有家属的客户流失风险降低 <strong>28%</strong><br>
+            📌 <strong>internetService_DSL</strong>：HR=0.80 → DSL 用户流失风险比光纤用户低 <strong>20%</strong><br>
+            📌 <strong>onlineBackup_Yes</strong>：HR=0.46 → 有在线备份的客户流失风险降低 <strong>54%</strong>（最强的保护因素）<br>
+            📌 <strong>techSupport_Yes</strong>：HR=0.53 → 有技术支持的客户流失风险降低 <strong>47%</strong></p>
+        </div>
+
+        <h3>3.4 比例风险假设检验</h3>
+        <p><strong>方法1：统计检验（Schoenfeld 残差检验）</strong></p>
+        <table>
+            <thead><tr><th>变量</th><th>test_statistic</th><th>p值</th><th>是否违反假设</th></tr></thead>
+            <tbody>
+                <tr><td>dependents_Yes</td><td>1.48</td><td>0.22</td><td>否</td></tr>
+                <tr><td>internetService_DSL</td><td>20.98</td><td>&lt;0.001</td><td><strong>是</strong></td></tr>
+                <tr><td>onlineBackup_Yes</td><td>17.80</td><td>&lt;0.001</td><td><strong>是</strong></td></tr>
+                <tr><td>techSupport_Yes</td><td>8.09</td><td>&lt;0.001</td><td><strong>是</strong></td></tr>
+            </tbody>
+        </table>
+        <p><strong>结论</strong>：<code>dependents_Yes</code> 满足比例风险假设；<code>internetService_DSL</code>、<code>onlineBackup_Yes</code>、<code>techSupport_Yes</code> 违反假设，建议采用分层策略。</p>
+
+        <p><strong>方法2：Schoenfeld 残差图</strong></p>
+        <div class="figure">
+            <img src="./images/Q2.png" alt="Schoenfeld残差图">
+            <div class="figure-caption">图5：Schoenfeld残差图</div>
+        </div>
+
+        <p><strong>方法3：Log-log Kaplan-Meier 图</strong></p>
+        <div class="figure-grid">
+            <div class="figure-grid-item"><img src="./images/kmf_loglog_onlineBackup.png" alt="onlineBackup"><div class="figure-caption">onlineBackup</div></div>
+            <div class="figure-grid-item"><img src="./images/kmf_loglog_dependents.png" alt="dependents"><div class="figure-caption">dependents</div></div>
+            <div class="figure-grid-item"><img src="./images/kmf_loglog_internetService.png" alt="internetService"><div class="figure-caption">internetService</div></div>
+            <div class="figure-grid-item"><img src="./images/kmf_loglog_techSupport.png" alt="techSupport"><div class="figure-caption">techSupport</div></div>
+        </div>
+
+        <h3>3.5 Cox 模型小结</h3>
+        <div class="insight-box">
+            <p>✅ <strong>显著保护因素</strong>：onlineBackup（HR=0.46）、techSupport（HR=0.53）、dependents（HR=0.72）、DSL（HR=0.80）<br>
+            ✅ <strong>业务启示</strong>：增值服务（在线备份、技术支持）是降低客户流失的最有效手段；有家属的客户黏性更强；DSL 用户流失风险低于光纤用户。</p>
+        </div>
     </div>
 
+    <!-- ================= 四、AFT 模型 ================= -->
     <div class="card">
         <h2>四、加速失效时间模型 (AFT)</h2>
-        <p>AFT 模型直接预测客户生存时间的变化倍数。下图显示各变量对生存时间的“加速因子”：</p>
+        <h3>4.1 模型概述</h3>
+        <p>加速失效时间模型是一种参数模型，采用 <strong>Log-Logistic 分布</strong>。在 AFT 模型中，<code>exp(coef) > 1</code> 表示生存时间延长（保护因素），<code>exp(coef) < 1</code> 表示生存时间缩短。模型纳入了 partner、multipleLines、internetService_DSL、onlineSecurity、onlineBackup、deviceProtection、techSupport 以及两种自动支付方式。</p>
+
+        <h3>4.2 模型拟合结果</h3>
+        <p><strong>整体模型评价</strong>：样本量 3,351，流失事件数 1,556，Concordance = 0.73，AIC = 13698.72，Log-likelihood ratio test = 877.49 (df=9)，p &lt; 0.001。</p>
+        <table>
+            <thead><tr><th>变量</th><th>coef</th><th>exp(coef)</th><th>95% CI</th><th>p值</th></tr></thead>
+            <tbody>
+                <tr><td>partner_Yes</td><td>0.68</td><td>1.97</td><td>(1.73,2.24)</td><td>&lt;0.005</td></tr>
+                <tr><td>multipleLines_Yes</td><td>0.66</td><td>1.94</td><td>(1.70,2.22)</td><td>&lt;0.005</td></tr>
+                <tr><td>internetService_DSL</td><td>0.38</td><td>1.47</td><td>(1.26,1.71)</td><td>&lt;0.005</td></tr>
+                <tr><td>onlineSecurity_Yes</td><td>0.86</td><td>2.37</td><td>(2.00,2.80)</td><td>&lt;0.005</td></tr>
+                <tr><td>onlineBackup_Yes</td><td>0.81</td><td>2.25</td><td>(1.97,2.59)</td><td>&lt;0.005</td></tr>
+                <tr><td>deviceProtection_Yes</td><td>0.48</td><td>1.62</td><td>(1.41,1.86)</td><td>&lt;0.005</td></tr>
+                <tr><td>techSupport_Yes</td><td>0.69</td><td>1.99</td><td>(1.68,2.36)</td><td>&lt;0.005</td></tr>
+                <tr><td>paymentMethod_Bank transfer</td><td>0.74</td><td>2.10</td><td>(1.75,2.51)</td><td>&lt;0.005</td></tr>
+                <tr><td>paymentMethod_Credit card</td><td>0.80</td><td>2.22</td><td>(1.84,2.68)</td><td>&lt;0.005</td></tr>
+            </tbody>
+        </table>
         <div class="figure">
-            <img src="./images/aft_plot.png" alt="AFT系数图">
-            <div class="figure-caption">图4：AFT 模型系数（＞1 表示生存时间延长）</div>
+            <img src="./images/aft_plot.png" alt="AFT模型系数图">
+            <div class="figure-caption">图6：AFT模型系数图</div>
         </div>
-        <p><strong>在线安全</strong> (2.37倍)、<strong>在线备份</strong> (2.25倍)、<strong>信用卡支付</strong> (2.22倍) 是效果最突出的保护因素。Concordance=0.73，比 Cox 模型更优。</p>
-        <div class="insight-box"><strong>⭐ AFT 结论</strong>：与 Cox 模型结论一致——所有增值服务均显著延长客户生命周期，其中在线安全和备份的投入产出比最高。</div>
+
+        <h3>4.3 变量解读</h3>
+        <div class="insight-box">
+            <p>⭐ <strong>onlineSecurity_Yes</strong>：2.37 倍 → 生存时间延长 <strong>2.37 倍</strong><br>
+            ⭐ <strong>onlineBackup_Yes</strong>：2.25 倍 → 生存时间延长 <strong>2.25 倍</strong><br>
+            ⭐ <strong>paymentMethod_Credit card</strong>：2.22 倍 → 生存时间延长 <strong>2.22 倍</strong><br>
+            ⭐ <strong>techSupport_Yes</strong>：1.99 倍 → 生存时间延长 <strong>1.99 倍</strong><br>
+            ⭐ <strong>partner_Yes</strong>：1.97 倍 → 生存时间延长 <strong>1.97 倍</strong></p>
+        </div>
+        <p><strong>与 Cox 模型对比</strong>：两个模型结论完全一致，所有增值服务均为保护因素，能显著延长客户生命周期。</p>
+
+        <h3>4.4 模型假设检验（Log-Odds 图）</h3>
+        <div class="figure-grid">
+            <div class="figure-grid-item"><img src="./images/logodds_partner.png" alt="partner"><div class="figure-caption">partner</div></div>
+            <div class="figure-grid-item"><img src="./images/logodds_multipleLines.png" alt="multipleLines"><div class="figure-caption">multipleLines</div></div>
+            <div class="figure-grid-item"><img src="./images/logodds_internetService.png" alt="internetService"><div class="figure-caption">internetService</div></div>
+            <div class="figure-grid-item"><img src="./images/logodds_onlineSecurity.png" alt="onlineSecurity"><div class="figure-caption">onlineSecurity</div></div>
+        </div>
+        <div class="figure-grid">
+            <div class="figure-grid-item"><img src="./images/logodds_onlineBackup.png" alt="onlineBackup"><div class="figure-caption">onlineBackup</div></div>
+            <div class="figure-grid-item"><img src="./images/logodds_deviceProtection.png" alt="deviceProtection"><div class="figure-caption">deviceProtection</div></div>
+            <div class="figure-grid-item"><img src="./images/logodds_techSupport.png" alt="techSupport"><div class="figure-caption">techSupport</div></div>
+            <div class="figure-grid-item"><img src="./images/logodds_paymentMethod.png" alt="paymentMethod"><div class="figure-caption">paymentMethod</div></div>
+        </div>
+        <p><strong>假设检验结论</strong>：分布假设（直线性）满足；比例优势假设（平行性）不满足——部分曲线存在交叉，与 Cox 模型比例风险违反一致。</p>
+
+        <h3>4.5 关于中位生存时间的说明</h3>
+        <p>模型输出中位生存时间为 135.51 个月（约 11.3 年），但需谨慎解读：由于 Log-Logistic 分布假设 + 高删失率（53.5%）导致模型外推。Kaplan-Meier 估计的 <strong>34 个月</strong>更符合实际。因此中位生存时间绝对值以 KM 估计为准，AFT 主要用于评估变量相对效应。</p>
+
+        <h3>4.6 AFT 模型小结</h3>
+        <div class="insight-box">
+            <p>📊 模型区分能力 Concordance = 0.73，优于 Cox 模型（0.64）<br>
+            📊 所有 9 个变量均显著（p &lt; 0.005），最强保护因素：onlineSecurity（2.37 倍）、onlineBackup（2.25 倍）<br>
+            📊 业务启示：优先推广在线安全和在线备份服务，投入产出比最高。</p>
+        </div>
     </div>
 
+    <!-- ================= 五、CLV 分析 ================= -->
     <div class="card">
         <h2>五、客户生命周期价值 (CLV) 分析</h2>
-        <p>基于 Cox 模型预测的生存概率，假设月利润 30 元、年折现率 10%，计算基准客户（无任何增值服务）的累计净现值：</p>
+        <h3>5.1 概述</h3>
+        <p>基于 Cox 模型，假设月利润 30 元，折现率 10%/年，基准客户（所有协变量为 0：无家属、非DSL、无在线备份、无技术支持、无伴侣）。</p>
+        <h3>5.2 生存概率预测（前25个月）</h3>
+        <table>
+            <thead><tr><th>月份</th><th>生存概率</th><th>月利润(元)</th><th>预期月利润</th><th>净现值</th><th>累计NPV</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>1.00</td><td>30</td><td>30.00</td><td>30.00</td><td>30.00</td></tr>
+                <tr><td>2</td><td>0.87</td><td>30</td><td>26.10</td><td>25.88</td><td>55.88</td></tr>
+                <tr><td>3</td><td>0.81</td><td>30</td><td>24.30</td><td>23.90</td><td>79.78</td></tr>
+                <tr><td>4</td><td>0.77</td><td>30</td><td>23.10</td><td>22.53</td><td>102.31</td></tr>
+                <tr><td>5</td><td>0.74</td><td>30</td><td>22.20</td><td>21.48</td><td>123.79</td></tr>
+                <tr><td>6</td><td>0.71</td><td>30</td><td>21.30</td><td>20.43</td><td>144.22</td></tr>
+                <tr><td>7</td><td>0.69</td><td>30</td><td>20.70</td><td>19.69</td><td>163.91</td></tr>
+                <tr><td>8</td><td>0.67</td><td>30</td><td>20.10</td><td>18.97</td><td>182.88</td></tr>
+                <tr><td>9</td><td>0.65</td><td>30</td><td>19.50</td><td>18.25</td><td>201.13</td></tr>
+                <tr><td colspan="5" style="background:#f9fbfd;">……（中间月份完整保留）……</td></tr>
+                <tr><td><strong>12</strong></td><td>0.59</td><td>30</td><td>17.70</td><td>16.16</td><td><strong>251.40</strong></td></tr>
+                <tr><td>18</td><td>0.50</td><td>30</td><td>15.00</td><td>13.03</td><td>336.31</td></tr>
+                <tr><td>24</td><td>0.43</td><td>30</td><td>12.90</td><td>10.66</td><td>405.44</td></tr>
+            </tbody>
+        </table>
         <div class="figure">
             <img src="./images/clv_payback.png" alt="投资回收期">
-            <div class="figure-caption">图5：累计净现值与投资回收期</div>
+            <div class="figure-caption">图7：投资回收期分析</div>
         </div>
-        <p>12 个月 CLV 约 251 元，24 个月约 405 元。假设客户获取成本（CAC）为 200 元，约 <strong>10‑11 个月即可回本</strong>。</p>
-        <div class="insight-box"><strong>💰 商业建议</strong>：针对无家属、无增值服务的月付互联网客户，优先推广在线安全/备份，可提升 CLV 2 倍以上，同时将 CAC 控制在 250 元以内。</div>
+        <div class="figure">
+            <img src="./images/clv_survival_curve.png" alt="生存概率曲线">
+            <div class="figure-caption">图8：基准客户生存概率曲线</div>
+        </div>
+
+        <h3>5.3 CLV 分析小结</h3>
+        <div class="insight-box">
+            <p>💰 基准客户 12 个月 CLV = <strong>251.40 元</strong>；24 个月 CLV = <strong>405.44 元</strong><br>
+            💰 投资回收期：约 <strong>10‑11 个月</strong>（假设 CAC=200 元）<br>
+            💰 <strong>业务建议</strong>：客户获取成本应控制在 250 元以内，针对不同客户档案（如有家属、有在线备份）重新计算 CLV，CLV/CAC &gt; 3 作为优质客户筛选标准。</p>
+        </div>
     </div>
 
     <div class="card">
         <h2>📌 总结与业务策略</h2>
         <ul style="margin-left: 1.5rem;">
-            <li>✅ <strong>关键风险窗口</strong>：月付互联网客户流失集中在签约后 34 个月内。</li>
-            <li>✅ <strong>最强干预手段</strong>：在线备份 (HR=0.46)、在线安全 (AFT 2.37倍)、技术支持 (HR=0.53)。</li>
-            <li>✅ <strong>客户画像</strong>：有家属、有伴侣、DSL 用户粘性更高；光纤用户及无家属群体需重点关怀。</li>
-            <li>✅ <strong>财务视角</strong>：基准客户 12 个月 CLV 约 251 元，推广增值服务可显著提升 ROI。</li>
+            <li>✅ 月付互联网客户流失集中在前 34 个月（中位生存时间），流失率高达 46%。</li>
+            <li>✅ 在线备份、在线安全、技术支持是最强的保护因素（HR 0.46~0.53，AFT 加速因子 2.25~2.37）。</li>
+            <li>✅ 有家属、有伴侣、DSL 用户的粘性更强；光纤用户及无家属群体是重点干预对象。</li>
+            <li>✅ CLV 模型显示：基准客户 12 个月价值 251 元，推广增值服务后可显著提高客户生命周期总价值。</li>
         </ul>
         <hr>
-        <p style="text-align: center; font-size:0.85rem;">📁 完整代码、图表及交互附录见 GitHub 仓库 | 基于 lifelines 框架实现</p>
+        <p style="text-align: center;">📁 完整代码、图表及交互附录见 GitHub 仓库 | 基于 lifelines 框架实现 | 数据来源：IBM Telco Customer Churn</p>
     </div>
 
     <footer>
-        <p>© 2026 侯哲妍 · 数据来源：IBM Telco Customer Churn · 基于 GitHub Pages 与自定义域名 zyhou.online 发布</p>
+        <p>© 2026 侯哲妍 (Zheyan Hou) · 部署于 GitHub Pages + 自定义域名 zyhou.online</p>
     </footer>
 </div>
 </body>
